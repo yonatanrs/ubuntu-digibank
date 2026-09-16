@@ -1,0 +1,20 @@
+service: payment-service
+slos:
+  - name: payment-api-availability
+    objective: 99.95
+    window: 30d
+    sli: successful_non_customer_error_requests / valid_requests
+  - name: payment-initiation-latency
+    objective: 99.0
+    window: 30d
+    sli: requests_under_750ms / valid_requests
+alerts:
+  - name: fast-burn
+    burn_rate: 14.4
+    short_window: 5m
+    long_window: 1h
+  - name: slow-burn
+    burn_rate: 2
+    short_window: 6h
+    long_window: 3d
+

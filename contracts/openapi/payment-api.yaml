@@ -1,0 +1,89 @@
+openapi: 3.1.0
+info:
+  title: Ubuntu Digital Bank Payment API
+  version: 1.0.0
+servers:
+  - url: https://api.bank.example.za
+paths:
+  /api/v1/payments:
+    post:
+      operationId: createPayment
+      security:
+        - oauth2: [payments.write]
+      parameters:
+        - in: header
+          name: X-Correlation-ID
+          required: false
+          description: Caller correlation identifier; a safe value is echoed or generated.
+          schema: { type: string, minLength: 8, maxLength: 100 }
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 100 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePayment' }
+      responses:
+        '202':
+          description: Payment accepted for processing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '409': { description: Idempotency conflict }
+  /api/v1/payments/{paymentId}:
+    get:
+      operationId: getPayment
+      security:
+        - oauth2: [payments.read]
+      parameters:
+        - in: header
+          name: X-Correlation-ID
+          required: false
+          schema: { type: string, minLength: 8, maxLength: 100 }
+        - in: path
+          name: paymentId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Current authoritative payment state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '404': { description: Payment not found }
+components:
+  schemas:
+    CreatePayment:
+      type: object
+      required: [debtorAccountId, creditorAccountId, amount, currency, rail, reference]
+      properties:
+        debtorAccountId: { type: string, maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+        creditorAccountId: { type: string, maxLength: 64, pattern: '^[A-Za-z0-9._:-]+$' }
+        amount: { type: number, exclusiveMinimum: 0 }
+        currency: { type: string, const: ZAR }
+        rail: { type: string, enum: [INTERNAL, PAYSHAP, EFT, RTC, SAMOS] }
+        reference: { type: string, maxLength: 140 }
+    Payment:
+      allOf:
+        - $ref: '#/components/schemas/CreatePayment'
+        - type: object
+          required: [paymentId, status, createdAt]
+          properties:
+            paymentId: { type: string, format: uuid }
+            status: { type: string, enum: [RECEIVED, DISPATCHING, SUBMITTED, PENDING_CONFIRMATION, SETTLED, REJECTED, FAILED] }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+            externalProvider: { type: [string, 'null'] }
+            externalReference: { type: [string, 'null'] }
+            failureCode: { type: [string, 'null'] }
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.bank.example.za/oauth2/token
+          scopes:
+            payments.read: Read payment status
+            payments.write: Initiate payments

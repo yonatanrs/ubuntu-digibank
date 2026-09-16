@@ -1,0 +1,35 @@
+asyncapi: 3.0.0
+info:
+  title: Ubuntu Digital Bank Payment Events
+  version: 1.0.0
+channels:
+  paymentEvents:
+    address: bank.payment.events.v1
+    messages:
+      paymentStatusChanged:
+        $ref: '#/components/messages/PaymentStatusChanged'
+operations:
+  publishPaymentStatus:
+    action: send
+    channel: { $ref: '#/channels/paymentEvents' }
+components:
+  messages:
+    PaymentStatusChanged:
+      payload:
+        type: object
+        required: [eventId, eventType, schemaVersion, correlationId, causationId, occurredAt, paymentId, status, amount, currency]
+        properties:
+          eventId: { type: string, format: uuid }
+          eventType: { type: string }
+          schemaVersion: { type: integer, minimum: 1 }
+          correlationId: { type: string }
+          causationId: { type: string, format: uuid }
+          occurredAt: { type: string, format: date-time }
+          paymentId: { type: string, format: uuid }
+          status: { type: string }
+          amount: { type: number }
+          currency: { type: string, const: ZAR }
+          rail: { type: string }
+          externalProvider: { type: [string, 'null'] }
+          externalReference: { type: [string, 'null'] }
+          failureCode: { type: [string, 'null'] }
