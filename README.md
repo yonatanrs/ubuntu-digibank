@@ -1,4 +1,4 @@
-# Ubuntu Digital Bank — South Africa (Optimized V4)
+# Ubuntu Digital Bank — South Africa's Company
 
 Senior/Lead Solution Architecture portfolio project for a resilient, inclusive and compliant South African digital bank.
 
