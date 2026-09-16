@@ -23,6 +23,8 @@ public class Payment {
     private String externalProvider;
     private String externalReference;
     private String failureCode;
+    @Column(nullable = false) private int inquiryAttempts;
+    private Instant nextInquiryAt;
     @Version private long version;
 
     protected Payment() {}
@@ -50,11 +52,37 @@ public class Payment {
 
     public void markPendingConfirmation(String provider, String code) {
         require(Status.DISPATCHING); this.status = Status.PENDING_CONFIRMATION;
-        this.externalProvider = provider; this.failureCode = code; touch();
+        this.externalProvider = provider; this.failureCode = code;
+        this.inquiryAttempts = 0; this.nextInquiryAt = Instant.now(); touch();
     }
 
     public void markFailed(String code) {
         require(Status.DISPATCHING); this.status = Status.FAILED; this.failureCode = code; touch();
+    }
+
+    public void resolveReconciliationAsSubmitted(String externalReference) {
+        require(Status.RECONCILING); this.status = Status.SUBMITTED;
+        if (externalReference != null && !externalReference.isBlank()) this.externalReference = externalReference;
+        this.failureCode = null; this.nextInquiryAt = null; touch();
+    }
+
+    public void resolveReconciliationAsRejected(String externalReference, String reasonCode) {
+        require(Status.RECONCILING); this.status = Status.REJECTED;
+        if (externalReference != null && !externalReference.isBlank()) this.externalReference = externalReference;
+        this.failureCode = reasonCode; this.nextInquiryAt = null; touch();
+    }
+
+    public void rescheduleReconciliation(String reasonCode, int maxAttempts) {
+        require(Status.RECONCILING); inquiryAttempts++;
+        this.failureCode = reasonCode;
+        if (inquiryAttempts >= maxAttempts) {
+            this.status = Status.MANUAL_REVIEW_REQUIRED; this.nextInquiryAt = null;
+        } else {
+            this.status = Status.PENDING_CONFIRMATION;
+            long delaySeconds = Math.min(900, 15L * (1L << Math.min(inquiryAttempts - 1, 6)));
+            this.nextInquiryAt = Instant.now().plusSeconds(delaySeconds);
+        }
+        touch();
     }
 
     private void require(Status expected) {
@@ -77,7 +105,10 @@ public class Payment {
     public String getExternalProvider() { return externalProvider; }
     public String getExternalReference() { return externalReference; }
     public String getFailureCode() { return failureCode; }
+    public int getInquiryAttempts() { return inquiryAttempts; }
+    public Instant getNextInquiryAt() { return nextInquiryAt; }
 
     public enum Rail { INTERNAL, PAYSHAP, EFT, RTC, SAMOS }
-    public enum Status { RECEIVED, DISPATCHING, SUBMITTED, PENDING_CONFIRMATION, SETTLED, REJECTED, FAILED }
+    public enum Status { RECEIVED, DISPATCHING, SUBMITTED, PENDING_CONFIRMATION, RECONCILING,
+        MANUAL_REVIEW_REQUIRED, SETTLED, REJECTED, FAILED }
 }

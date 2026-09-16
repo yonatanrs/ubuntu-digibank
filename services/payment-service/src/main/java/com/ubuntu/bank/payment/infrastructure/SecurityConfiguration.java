@@ -22,6 +22,7 @@ public final class SecurityConfiguration {
                     .frameOptions(frame -> frame.deny()))
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/actuator/health/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/operations/**").hasAuthority("SCOPE_payments.operations.read")
                     .requestMatchers(HttpMethod.GET, "/api/v1/payments/**").hasAuthority("SCOPE_payments.read")
                     .requestMatchers(HttpMethod.POST, "/api/v1/payments/**").hasAuthority("SCOPE_payments.write")
                     .anyRequest().authenticated())

@@ -43,11 +43,13 @@ public class PaymentController {
 
     public record PaymentResponse(UUID paymentId, String status, BigDecimal amount, String currency,
                                   Payment.Rail rail, Instant createdAt, Instant updatedAt,
-                                  String externalProvider, String externalReference, String failureCode) {
+                                  String externalProvider, String externalReference, String failureCode,
+                                  int inquiryAttempts, Instant nextInquiryAt) {
         static PaymentResponse from(Payment p) {
             return new PaymentResponse(p.getId(), p.getStatus().name(), p.getAmount(),
                 p.getCurrency(), p.getRail(), p.getCreatedAt(), p.getUpdatedAt(),
-                p.getExternalProvider(), p.getExternalReference(), p.getFailureCode());
+                p.getExternalProvider(), p.getExternalReference(), p.getFailureCode(),
+                p.getInquiryAttempts(), p.getNextInquiryAt());
         }
     }
 }

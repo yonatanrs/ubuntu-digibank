@@ -53,6 +53,21 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Payment' }
         '404': { description: Payment not found }
+  /api/v1/operations/payments/manual-review:
+    get:
+      operationId: listPaymentsRequiringManualReview
+      security:
+        - oauth2: [payments.operations.read]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        '200':
+          description: Paginated queue of unresolved payments requiring an authorised operator.
 components:
   schemas:
     CreatePayment:
@@ -72,12 +87,14 @@ components:
           required: [paymentId, status, createdAt]
           properties:
             paymentId: { type: string, format: uuid }
-            status: { type: string, enum: [RECEIVED, DISPATCHING, SUBMITTED, PENDING_CONFIRMATION, SETTLED, REJECTED, FAILED] }
+            status: { type: string, enum: [RECEIVED, DISPATCHING, SUBMITTED, PENDING_CONFIRMATION, RECONCILING, MANUAL_REVIEW_REQUIRED, SETTLED, REJECTED, FAILED] }
             createdAt: { type: string, format: date-time }
             updatedAt: { type: string, format: date-time }
             externalProvider: { type: [string, 'null'] }
             externalReference: { type: [string, 'null'] }
             failureCode: { type: [string, 'null'] }
+            inquiryAttempts: { type: integer, minimum: 0 }
+            nextInquiryAt: { type: [string, 'null'], format: date-time }
   securitySchemes:
     oauth2:
       type: oauth2
@@ -87,3 +104,4 @@ components:
           scopes:
             payments.read: Read payment status
             payments.write: Initiate payments
+            payments.operations.read: Read controlled operations queues

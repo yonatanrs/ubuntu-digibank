@@ -33,3 +33,5 @@ components:
           externalProvider: { type: [string, 'null'] }
           externalReference: { type: [string, 'null'] }
           failureCode: { type: [string, 'null'] }
+          inquiryAttempts: { type: integer, minimum: 0 }
+          nextInquiryAt: { type: [string, 'null'], format: date-time }

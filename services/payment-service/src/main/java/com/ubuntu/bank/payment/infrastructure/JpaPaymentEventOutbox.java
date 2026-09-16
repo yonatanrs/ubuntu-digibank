@@ -37,6 +37,8 @@ public class JpaPaymentEventOutbox implements PaymentEventPort {
         payload.put("externalProvider", payment.getExternalProvider());
         payload.put("externalReference", payment.getExternalReference());
         payload.put("failureCode", payment.getFailureCode());
+        payload.put("inquiryAttempts", payment.getInquiryAttempts());
+        payload.put("nextInquiryAt", payment.getNextInquiryAt());
         try {
             outbox.save(new OutboxEvent(eventId, payment.getId().toString(), eventType,
                 json.writeValueAsString(payload)));
@@ -50,4 +52,3 @@ public class JpaPaymentEventOutbox implements PaymentEventPort {
         return value == null ? UUID.randomUUID().toString() : value;
     }
 }
-

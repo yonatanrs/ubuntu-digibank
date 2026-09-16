@@ -11,6 +11,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class PaymentService {
@@ -42,6 +44,11 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public Payment find(UUID id) {
         return payments.findById(id).orElseThrow(PaymentNotFoundException::new);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Payment> manualReviewQueue(Pageable pageable) {
+        return payments.findByStatusOrderByUpdatedAtAsc(Payment.Status.MANUAL_REVIEW_REQUIRED, pageable);
     }
 
     private String fingerprint(CreatePaymentCommand r) {

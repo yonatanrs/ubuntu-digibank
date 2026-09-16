@@ -23,6 +23,11 @@ bank:
   outbox:
     batch-size: 20
     max-attempts: 10
+  reconciliation:
+    delay-ms: 5000
+    max-attempts: 8
+  recovery:
+    delay-ms: 60000
 management:
   endpoints:
     web:
